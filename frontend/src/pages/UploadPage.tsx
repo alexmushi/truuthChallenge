@@ -120,7 +120,7 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
   };
 
   const getByType = (docType: RequiredDocType) => submissions.find((s) => s.docType === docType) || { docType, status: 'NOT_SUBMITTED' } as Submission;
-  const formatDate = (value?: string) => (value ? new Date(value).toLocaleString() : 'Awaiting upload');
+  const formatDate = (value?: string) => (value ? new Date(value).toLocaleString() : '');
   const statusCopy = (status: Submission['status']) => {
     if (status === 'DONE') return 'Uploaded';
     if (status === 'PROCESSING') return 'Processing';
@@ -189,7 +189,7 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
                         </p>
                         {fileNames[doc.type] ? <span className="upload-doc-name">{fileNames[doc.type]}</span> : null}
                       </div>
-                      <p className="upload-doc-date">Uploaded on {formatDate(submission.updatedAt)}</p>
+                      {isUploaded ? <p className="upload-doc-date">Uploaded on {formatDate(submission.updatedAt)}</p> : null}
                     </div>
                   </div>
 
