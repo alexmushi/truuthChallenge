@@ -1,0 +1,22 @@
+service: truuth-applicant-portal-backend
+frameworkVersion: '3'
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-southeast-2
+  environment:
+    DATABASE_URL: ${env:DATABASE_URL}
+    JWT_SECRET: ${env:JWT_SECRET}
+    TRUUTH_API_KEY: ${env:TRUUTH_API_KEY}
+    TRUUTH_API_SECRET: ${env:TRUUTH_API_SECRET}
+    TRUUTH_CLASSIFIER_URL: ${env:TRUUTH_CLASSIFIER_URL}
+    TRUUTH_VERIFY_SUBMIT_URL: ${env:TRUUTH_VERIFY_SUBMIT_URL}
+    TRUUTH_VERIFY_RESULT_URL: ${env:TRUUTH_VERIFY_RESULT_URL}
+functions:
+  api:
+    handler: api/index.handler
+    events:
+      - httpApi:
+          path: /api/{proxy+}
+          method: ANY
+plugins: []

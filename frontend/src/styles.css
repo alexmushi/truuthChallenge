@@ -1,0 +1,65 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+  color: #132136;
+  background: #f4f7fb;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+.center-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.2rem;
+  box-shadow: 0 8px 20px rgba(19, 33, 54, 0.08);
+}
+
+.form { width: 420px; display: grid; gap: 0.8rem; }
+input, button { font: inherit; padding: 0.7rem 0.8rem; border-radius: 10px; border: 1px solid #cfd6e5; }
+button { background: #155eef; border: none; color: white; font-weight: 600; cursor: pointer; }
+button.secondary { background: white; color: #155eef; border: 1px solid #155eef; }
+button:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.header-actions { display: flex; gap: 0.6rem; }
+.selection-card { max-width: 600px; margin-top: 1.5rem; }
+.subtitle, .muted, .tiny { color: #5b6880; }
+.error { color: #cc2433; font-weight: 500; }
+
+.grid {
+  margin-top: 1rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.doc-card { display: grid; gap: 0.7rem; }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: grid; place-items: center;
+}
+
+.modal {
+  width: min(820px, 90vw);
+  max-height: 85vh;
+  overflow: auto;
+  background: white;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.modal-actions { display: flex; gap: 0.6rem; margin-bottom: 0.8rem; }
+pre { background: #091426; color: #d9e9ff; padding: 1rem; border-radius: 10px; overflow: auto; }

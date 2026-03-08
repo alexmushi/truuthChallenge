@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  username     String       @unique
+  passwordHash String
+  submissions  Submission[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Submission {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  docType          DocType
+  documentVerifyId String?
+  status           VerifyStatus @default(NOT_SUBMITTED)
+  resultJson       Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([userId, docType])
+}
+
+enum DocType {
+  AU_PASSPORT
+  AU_DRIVER_LICENCE
+  RESUME
+}
+
+enum VerifyStatus {
+  NOT_SUBMITTED
+  PROCESSING
+  DONE
+  FAILED
+}
