@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import ErrorModal from '../components/ErrorModal';
 import { RequiredDocType, Submission, User } from '../types';
 
 const REQUIRED_DOCS: { type: RequiredDocType; label: string; accept: string }[] = [
-  { type: 'AU_PASSPORT', label: 'Australian Passport', accept: 'image/jpeg,image/png,application/pdf' },
-  { type: 'AU_DRIVER_LICENCE', label: 'Australian Driver Licence', accept: 'image/jpeg,image/png,application/pdf' },
-  { type: 'RESUME', label: 'Resume', accept: 'application/pdf,image/jpeg,image/png' }
+  { type: 'AU_PASSPORT', label: 'Australian Passport', accept: 'image/jpeg,image/png' },
+  { type: 'AU_DRIVER_LICENCE', label: 'Australian Driver Licence', accept: 'image/jpeg,image/png' },
+  { type: 'RESUME', label: 'Resume', accept: 'image/jpeg,image/png' }
 ];
 
-const ALLOWED = ['image/jpeg', 'image/png', 'application/pdf'];
+const ALLOWED = ['image/jpeg', 'image/png'];
 
 export default function UploadPage({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [fileNames, setFileNames] = useState<Record<RequiredDocType, string>>({
+    AU_PASSPORT: '',
+    AU_DRIVER_LICENCE: '',
+    RESUME: ''
+  });
   const [error, setError] = useState('');
   const [busyType, setBusyType] = useState<RequiredDocType | null>(null);
   const [deletingType, setDeletingType] = useState<RequiredDocType | null>(null);
@@ -24,13 +30,29 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
   });
   const navigate = useNavigate();
 
+  // Polls the backend for latest document statuses so the UI reflects async verification updates.
   const refresh = () => api.listDocuments().then((res) => setSubmissions(res.submissions)).catch(() => setError('Could not load your documents right now.'));
+  // Store selected filenames per-user because backend does not persist original file names.
+  const namesStorageKey = `upload-filenames-${user.id}`;
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(namesStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<Record<RequiredDocType, string>>;
+        setFileNames({
+          AU_PASSPORT: parsed.AU_PASSPORT || '',
+          AU_DRIVER_LICENCE: parsed.AU_DRIVER_LICENCE || '',
+          RESUME: parsed.RESUME || ''
+        });
+      }
+    } catch {
+      // ignore invalid local storage data
+    }
     refresh();
     const timer = setInterval(refresh, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [namesStorageKey]);
 
   const uploadedCount = useMemo(() => submissions.filter((s) => s.status !== 'NOT_SUBMITTED').length, [submissions]);
   const totalRequired = REQUIRED_DOCS.length;
@@ -38,12 +60,18 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
 
   const uploadFile = async (docType: RequiredDocType, file?: File) => {
     if (!file) return setError('Please select a file before submitting.');
-    if (!ALLOWED.includes(file.type)) return setError('Unsupported file type. Please upload PDF, PNG, or JPEG.');
+    if (!ALLOWED.includes(file.type)) return setError('Unsupported file type. Please upload PNG or JPEG.');
 
     setError('');
     setBusyType(docType);
     try {
       await api.uploadDocument(docType, file);
+      // Persist the selected name locally so it remains visible after refresh/navigation.
+      setFileNames((current) => {
+        const next = { ...current, [docType]: file.name };
+        localStorage.setItem(namesStorageKey, JSON.stringify(next));
+        return next;
+      });
       await refresh();
     } catch (err) {
       setError((err as Error).message || 'We could not process that upload right now.');
@@ -58,6 +86,12 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
     setDeletingType(docType);
     try {
       await api.deleteDocument(submissionId);
+      // Keep local filename cache in sync with server-side deletion.
+      setFileNames((current) => {
+        const next = { ...current, [docType]: '' };
+        localStorage.setItem(namesStorageKey, JSON.stringify(next));
+        return next;
+      });
       await refresh();
     } catch (err) {
       setError((err as Error).message || 'Could not delete this document right now.');
@@ -130,10 +164,13 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
                     </span>
                     <div>
                       <h3>{doc.label}</h3>
-                      <p className={`upload-doc-badge status-${submission.status.toLowerCase()}`}>
-                        {statusCopy(submission.status)}
-                      </p>
-                      <p className="upload-doc-date">Updated {formatDate(submission.updatedAt)}</p>
+                      <div className="upload-doc-meta">
+                        <p className={`upload-doc-badge status-${submission.status.toLowerCase()}`}>
+                          {statusCopy(submission.status)}
+                        </p>
+                        {fileNames[doc.type] ? <span className="upload-doc-name">{fileNames[doc.type]}</span> : null}
+                      </div>
+                      <p className="upload-doc-date">Uploaded on {formatDate(submission.updatedAt)}</p>
                     </div>
                   </div>
 
@@ -156,16 +193,6 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
                     >
                       {busyType === doc.type ? 'Uploading...' : (isUploaded ? 'Upload again' : 'Upload')}
                     </button>
-                    {submission.id > 0 ? (
-                      <button
-                        type="button"
-                        className="upload-delete-btn"
-                        disabled={busyType === doc.type || deletingType === doc.type}
-                        onClick={() => deleteFile(doc.type, submission.id)}
-                      >
-                        {deletingType === doc.type ? 'Deleting...' : 'Delete document'}
-                      </button>
-                    ) : null}
                   </div>
                 </article>
               );
@@ -188,7 +215,7 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
         </div>
       </main>
 
-      {error && <p className="error">{error}</p>}
+      <ErrorModal open={Boolean(error)} message={error} onClose={() => setError('')} />
     </div>
   );
 }

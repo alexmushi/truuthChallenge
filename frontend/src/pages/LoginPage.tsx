@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
+import ErrorModal from '../components/ErrorModal';
 import { User } from '../types';
 
 export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }) {
@@ -8,20 +9,27 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState('');
+  const [inlineError, setInlineError] = useState('');
+  const [modalError, setModalError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setLoading(true);
-    setError('');
+    setInlineError('');
+    setModalError('');
     try {
       const res = await api.login(username, password);
       onLogin(res.user);
       navigate('/selection');
     } catch (err) {
-      setError((err as Error).message);
+      const message = (err as Error).message || 'Something went wrong. Please try again.';
+      if (message.toLowerCase().includes('invalid credentials')) {
+        setInlineError('Invalid username or password.');
+      } else {
+        setModalError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -98,7 +106,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
           <button type="button" className="login-link-btn">Forgot password?</button>
         </div>
 
-        {error && <p className="error">{error}</p>}
+        {inlineError ? <p className="error">{inlineError}</p> : null}
 
         <button className="login-submit" disabled={loading}>
           {loading ? 'Signing in...' : 'Sign in'}
@@ -171,6 +179,8 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
           </p>
         </article>
       </section>
+
+      <ErrorModal open={Boolean(modalError)} message={modalError} onClose={() => setModalError('')} />
     </div>
   );
 }
