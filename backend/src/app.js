@@ -132,6 +132,24 @@ app.post('/api/documents/upload', auth, upload.single('file'), async (req, res) 
   }
 });
 
+app.delete('/api/documents/:id', auth, async (req, res) => {
+  const submissionId = Number(req.params.id);
+  if (!Number.isInteger(submissionId) || submissionId <= 0) {
+    return res.status(400).json({ message: 'Invalid submission id.' });
+  }
+
+  const submission = await prisma.submission.findFirst({ where: { id: submissionId, userId: req.user.id } });
+  if (!submission) return res.status(404).json({ message: 'Submission not found.' });
+
+  if (activePollers.has(submission.id)) {
+    clearInterval(activePollers.get(submission.id));
+    activePollers.delete(submission.id);
+  }
+
+  await prisma.submission.delete({ where: { id: submission.id } });
+  return res.json({ ok: true });
+});
+
 app.get('/api/documents/:id/result', auth, async (req, res) => {
   const submission = await prisma.submission.findFirst({ where: { id: Number(req.params.id), userId: req.user.id } });
   if (!submission) return res.status(404).json({ message: 'Submission not found.' });

@@ -124,7 +124,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
                 <path d="M12 3 4.5 6v5.3c0 4.6 3.2 8.8 7.5 9.9 4.3-1.1 7.5-5.3 7.5-9.9V6L12 3Z" stroke="currentColor" strokeWidth="1.8" />
               </svg>
             </span>
-            <h2>How the BioPass MFA Works?</h2>
+            <h2>How does the BioPass MFA Work?</h2>
           </div>
           <p className="login-info-lead">Our biometric verification process is designed to be simple, secure, and fast</p>
 

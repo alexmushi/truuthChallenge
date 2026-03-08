@@ -31,5 +31,5 @@ export const api = {
     formData.append('file', file);
     return request<{ submission: Submission }>('/api/documents/upload', { method: 'POST', body: formData });
   },
-  getResult: (submissionId: number) => request<{ resultJson: unknown }>(`/api/documents/${submissionId}/result`)
+  deleteDocument: (submissionId: number) => request<{ ok: boolean }>(`/api/documents/${submissionId}`, { method: 'DELETE' })
 };
