@@ -12,7 +12,6 @@ const { classifyIfNeeded, submitForVerification, fetchVerificationResult } = req
 const prisma = new PrismaClient();
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
-const activePollers = new Map();
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png']);
 
 app.use(cors({ origin: true, credentials: true }));
@@ -32,35 +31,28 @@ function auth(req, res, next) {
   }
 }
 
-function startPoller(submissionId, verifyId) {
-  // Prevent duplicate intervals for the same submission.
-  if (activePollers.has(submissionId)) return;
+async function reconcileProcessingSubmission(submission) {
+  if (submission.status !== 'PROCESSING' || !submission.documentVerifyId) return submission;
 
-  const poll = async () => {
-    try {
-      const result = await fetchVerificationResult(verifyId);
-      const status = result?.status;
-      if (status === 'DONE' || status === 'FAILED') {
-        // Persist terminal result once and stop polling to avoid unnecessary load.
-        await prisma.submission.update({ where: { id: submissionId }, data: { status, resultJson: result } });
-        clearInterval(interval);
-        activePollers.delete(submissionId);
-      }
-    } catch {
-      // keep polling
+  try {
+    const result = await fetchVerificationResult(submission.documentVerifyId);
+    const status = result?.status;
+    if (status === 'DONE' || status === 'FAILED') {
+      return prisma.submission.update({
+        where: { id: submission.id },
+        data: { status, resultJson: result }
+      });
     }
-  };
+  } catch {
+    // Keep current status and try again on a future request.
+  }
 
-  const interval = setInterval(poll, 5000);
-  activePollers.set(submissionId, interval);
-  poll();
+  return submission;
 }
 
 async function bootstrapPollers() {
   const processing = await prisma.submission.findMany({ where: { status: 'PROCESSING' } });
-  processing.forEach((item) => {
-    if (item.documentVerifyId) startPoller(item.id, item.documentVerifyId);
-  });
+  await Promise.all(processing.map(reconcileProcessingSubmission));
 }
 
 app.post('/api/auth/login', async (req, res) => {
@@ -94,12 +86,10 @@ app.get('/api/auth/me', auth, (req, res) => res.json({ user: { id: req.user.id, 
 
 app.get('/api/documents', auth, async (req, res) => {
   const submissions = await prisma.submission.findMany({ where: { userId: req.user.id } });
-  submissions.forEach((item) => {
-    if (item.status === 'PROCESSING' && item.documentVerifyId) startPoller(item.id, item.documentVerifyId);
-  });
+  const refreshed = await Promise.all(submissions.map(reconcileProcessingSubmission));
 
   // Always return all required document slots so frontend rendering is stable.
-  const complete = ['AU_PASSPORT', 'AU_DRIVER_LICENCE', 'RESUME'].map((docType) => submissions.find((s) => s.docType === docType)
+  const complete = ['AU_PASSPORT', 'AU_DRIVER_LICENCE', 'RESUME'].map((docType) => refreshed.find((s) => s.docType === docType)
     || { id: -1, docType, status: 'NOT_SUBMITTED', documentVerifyId: null, resultJson: null });
 
   return res.json({ submissions: complete });
@@ -127,7 +117,6 @@ app.post('/api/documents/upload', auth, upload.single('file'), async (req, res) 
       create: { userId: req.user.id, docType, documentVerifyId: verifyResponse.documentVerifyId, status: 'PROCESSING' }
     });
 
-    startPoller(submission.id, verifyResponse.documentVerifyId);
     return res.json({ submission });
   } catch (error) {
     return res.status(400).json({ message: error.message || 'Upload failed.' });
@@ -142,12 +131,6 @@ app.delete('/api/documents/:id', auth, async (req, res) => {
 
   const submission = await prisma.submission.findFirst({ where: { id: submissionId, userId: req.user.id } });
   if (!submission) return res.status(404).json({ message: 'Submission not found.' });
-
-  if (activePollers.has(submission.id)) {
-    // Stop background polling before deleting DB row to avoid orphan interval work.
-    clearInterval(activePollers.get(submission.id));
-    activePollers.delete(submission.id);
-  }
 
   await prisma.submission.delete({ where: { id: submission.id } });
   return res.json({ ok: true });
