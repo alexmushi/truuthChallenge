@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../api';
+import { ApiError, api } from '../api';
 import ErrorModal from '../components/ErrorModal';
 import { RequiredDocType, Submission, User } from '../types';
 
@@ -31,7 +31,18 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
   const navigate = useNavigate();
 
   // Polls the backend for latest document statuses so the UI reflects async verification updates.
-  const refresh = () => api.listDocuments().then((res) => setSubmissions(res.submissions)).catch(() => setError('Could not load your documents right now.'));
+  const refresh = async () => {
+    try {
+      const res = await api.listDocuments();
+      setSubmissions(res.submissions);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        await onLogout();
+        return;
+      }
+      setError('Could not load your documents right now.');
+    }
+  };
   // Store selected filenames per-user because backend does not persist original file names.
   const namesStorageKey = `upload-filenames-${user.id}`;
 
@@ -74,6 +85,10 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
       });
       await refresh();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        await onLogout();
+        return;
+      }
       setError((err as Error).message || 'We could not process that upload right now.');
     } finally {
       setBusyType(null);
@@ -94,6 +109,10 @@ export default function UploadPage({ user, onLogout }: { user: User; onLogout: (
       });
       await refresh();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        await onLogout();
+        return;
+      }
       setError((err as Error).message || 'Could not delete this document right now.');
     } finally {
       setDeletingType(null);
