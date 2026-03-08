@@ -50,6 +50,198 @@ button:disabled { opacity: 0.7; cursor: not-allowed; }
 .subtitle, .muted, .tiny { color: #5b6880; }
 .error { color: #cc2433; font-weight: 500; }
 
+.login-shell {
+  background: #f6f6f8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem 3rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-header {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.login-logo {
+  width: 132px;
+  height: auto;
+}
+
+.login-portal-label {
+  margin: 0;
+  font-size: 1.7rem;
+  letter-spacing: 0.04em;
+  color: #53577a;
+}
+
+.login-title {
+  margin: 0.5rem 0 0;
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  color: #252744;
+  text-align: center;
+}
+
+.login-subtitle {
+  margin: 0.2rem 0 1rem;
+  color: #6f7396;
+  font-size: 1.15rem;
+  text-align: center;
+}
+
+.login-card {
+  width: min(620px, 100%);
+  background: #f8f8fb;
+  border: 1px solid #dcdde8;
+  border-radius: 18px;
+  padding: 1.9rem 1.7rem 1.6rem;
+  display: grid;
+  gap: 1rem;
+  box-shadow: 0 2px 0 rgba(35, 40, 86, 0.02);
+}
+
+.login-field {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.login-field > span {
+  font-size: 1.05rem;
+  color: #2a2b45;
+  font-weight: 600;
+}
+
+.login-input-wrap {
+  height: 56px;
+  border: 1px solid #d1d3e1;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 0.65rem 0 0.75rem;
+  gap: 0.5rem;
+}
+
+.login-input-icon {
+  color: #76799a;
+  display: grid;
+  place-items: center;
+}
+
+.login-input-wrap input {
+  border: 0;
+  outline: 0;
+  padding: 0;
+  width: 100%;
+  font-size: 1.04rem;
+  color: #2d2f4c;
+  background: transparent;
+}
+
+.login-input-wrap input::placeholder {
+  color: #777a9d;
+}
+
+.login-icon-btn {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: #73769b;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+}
+
+.login-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #76799a;
+  font-size: 0.98rem;
+}
+
+.login-remember input {
+  width: 15px;
+  height: 15px;
+  accent-color: #8f00f0;
+}
+
+.login-link-btn {
+  border: 0;
+  background: transparent;
+  color: #8f00f0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+}
+
+.login-submit {
+  height: 52px;
+  border-radius: 12px;
+  border: 0;
+  background: linear-gradient(90deg, #960be3 0%, #8700e7 100%);
+  color: #fff;
+  font-size: 1.03rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.2rem;
+}
+
+.login-alt-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: #7d81a3;
+  font-size: 0.96rem;
+  margin-top: 0.35rem;
+}
+
+.login-alt-divider::before,
+.login-alt-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #d6d8e5;
+}
+
+.login-alt-copy {
+  margin: 0.25rem 0 0;
+  color: #777b9c;
+  text-align: center;
+  font-size: 0.99rem;
+}
+
+.login-alt-link {
+  border: 0;
+  background: transparent;
+  color: #8f00f0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  padding: 0.15rem 0 0.25rem;
+  cursor: pointer;
+}
+
+.login-security {
+  margin: 1rem 0 0;
+  color: #7f82a1;
+  font-size: 0.98rem;
+}
+
 .grid {
   margin-top: 1rem;
   display: grid;
@@ -184,6 +376,39 @@ pre { background: #091426; color: #d9e9ff; padding: 1rem; border-radius: 10px; o
 }
 
 @media (max-width: 640px) {
+  .login-shell {
+    padding: 1.1rem 0.85rem 2rem;
+  }
+
+  .login-title {
+    font-size: 1.9rem;
+  }
+
+  .login-subtitle {
+    font-size: 0.98rem;
+  }
+
+  .login-card {
+    padding: 1.2rem 1rem;
+  }
+
+  .login-field > span {
+    font-size: 1rem;
+  }
+
+  .login-input-wrap {
+    height: 50px;
+  }
+
+  .login-options {
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .login-submit {
+    height: 48px;
+  }
+
   .footer-top {
     grid-template-columns: 1fr;
   }
